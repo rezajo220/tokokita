@@ -1,102 +1,164 @@
-<<<<<<< HEAD
-# tokokita
-=======
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Sistem Manajemen Inventaris TokoKita
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Sistem API REST untuk bisnis retail TokoKita yang menangani manajemen inventaris dengan metode akuntansi FIFO (First-In, First-Out). Aplikasi ini memungkinkan pelacakan pembelian stok, pemrosesan penjualan dengan perhitungan FIFO, dan pembuatan laporan laba.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Fitur
 
-## Description
+- **Manajemen Inventaris**:
+  - Mencatat pembelian stok dengan pelacakan batch
+  - Melacak harga pembelian berbeda per batch
+  - Opsional tanggal kadaluarsa dan nomor batch
+  
+- **Pemrosesan Penjualan FIFO**:
+  - Alokasi stok otomatis berdasarkan prinsip FIFO (barang yang masuk lebih dulu, keluar lebih dulu)
+  - Pelacakan detail batch mana yang digunakan untuk setiap penjualan
+  - Perhitungan HPP (Harga Pokok Penjualan) yang akurat
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Pelaporan Laba**:
+  - Laporan laba bulanan dengan rincian harian
+  - Analisis item terlaris berdasarkan laba
+  - Caching laporan untuk performa lebih baik
 
-## Project setup
+## Arsitektur Sistem
+
+### Skema Database
+
+Sistem menggunakan PostgreSQL dengan tabel-tabel utama berikut:
+- `items`: Informasi produk
+- `stock_batches`: Catatan pembelian stok dengan harga beli
+- `sales`: Catatan transaksi penjualan
+- `sale_items`: Item baris dalam setiap penjualan
+- `sales_details`: Pelacakan FIFO batch mana yang digunakan untuk penjualan
+- `profit_reports`: Laporan bulanan yang di-cache
+
+### Teknologi
+
+- **Backend**: NestJS (framework Node.js)
+- **Database**: PostgreSQL
+- **ORM**: Prisma
+- **Dokumentasi API**: Swagger/OpenAPI
+- **Validasi**: class-validator
+
+## Memulai
+
+### Prasyarat
+
+- Node.js (v16+)
+- PostgreSQL (v12+)
+- npm atau yarn
+
+### Instalasi
+
+1. Clone repositori:
+   ```bash
+   git clone https://github.com/rezajo220/tokokita.git
+   cd tokokita
+   ```
+
+2. Instal dependensi:
+   ```bash
+   npm install
+   ```
+
+3. Konfigurasi variabel lingkungan dengan membuat file `.env`:
+   ```
+   DATABASE_URL="postgresql://username:password@localhost:5432/tokokita?schema=public"
+   ```
+
+4. Inisialisasi database:
+   ```bash
+   npx prisma migrate dev --name init
+   ```
+
+5. Jalankan aplikasi:
+   ```bash
+   npm run start:dev
+   ```
+
+6. API akan tersedia di `http://localhost:3000` dan dokumentasi Swagger di `http://localhost:3000/api`.
+
+## Endpoint API
+
+### Manajemen Inventaris
+
+- **POST /purchase**
+  - Mencatat pembelian stok baru
+  - Memerlukan itemId, quantity, dan purchase price (harga beli)
+
+### Penjualan
+
+- **POST /sale**
+  - Mencatat transaksi penjualan baru dengan perhitungan FIFO
+  - Secara otomatis mengurangi stok dari batch paling lama
+  - Mengembalikan informasi biaya dan laba secara rinci
+
+### Pelaporan
+
+- **GET /report?year=2023&month=5**
+  - Menghasilkan laporan laba bulanan
+  - Termasuk rincian harian dan analisis item teratas
+
+## Pengujian dengan cURL
+
+### Mencatat Pembelian
 
 ```bash
-$ npm install
+curl -X POST http://localhost:3000/purchase \
+  -H "Content-Type: application/json" \
+  -d '{
+    "itemId": 1,
+    "quantity": 100,
+    "purchasePrice": 15.50,
+    "batchNumber": "BATCH-2023-05-001"
+  }'
 ```
 
-## Compile and run the project
+### Mencatat Penjualan
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+curl -X POST http://localhost:3000/sale \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      {
+        "itemId": 1,
+        "quantity": 5,
+        "sellingPrice": 25.99
+      }
+    ],
+    "reference": "INV-2023-0001"
+  }'
 ```
 
-## Run tests
+### Mendapatkan Laporan Bulanan
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+curl -X GET "http://localhost:3000/report?year=2023&month=5"
 ```
 
-## Deployment
+## Aliran Proses FIFO
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Proses inventaris FIFO memastikan bahwa stok paling lama terjual lebih dulu:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+1. Saat pembelian dicatat, setiap batch dilacak dengan tanggal dan harga pembelian
+2. Saat penjualan terjadi:
+   - Sistem mencari batch tersedia paling lama dari item tersebut
+   - Sistem mengalokasikan stok dari batch tersebut secara kronologis
+   - Sistem melacak batch mana yang digunakan untuk setiap item penjualan
+   - Sistem menghitung HPP berdasarkan harga pembelian asli dari batch tersebut
 
-```bash
-$ npm install -g mau
-$ mau deploy
-```
+Pendekatan ini memastikan penilaian inventaris dan perhitungan laba yang akurat.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Penanganan Error
 
-## Resources
+Sistem melakukan validasi komprehensif termasuk:
+- Tidak ada jumlah atau harga negatif
+- Pencegahan penjualan stok lebih dari yang tersedia
+- Validasi keberadaan item
 
-Check out a few resources that may come in handy when working with NestJS:
+## Potensi Optimasi
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
->>>>>>> 7c6e567 (Initial commit)
+- Mengelompokkan query database untuk performa lebih baik selama puncak penjualan
+- Menerapkan strategi caching lebih canggih untuk laporan
+- Menambahkan indeks database untuk bidang yang sering diquery
+- Menerapkan soft deletion untuk preservasi data historis
