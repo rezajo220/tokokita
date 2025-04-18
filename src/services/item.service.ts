@@ -30,16 +30,13 @@ export class ItemsService {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        // P2002 is the error code for unique constraint violation
         if (error.code === 'P2002') {
-          // Check which field caused the unique constraint violation
           const target = error.meta?.target as string[];
           if (target && target.includes('sku')) {
             throw new ConflictException(`Item with SKU '${createItemDto.sku}' already exists`);
           }
         }
       }
-      // Re-throw the error if it's not a unique constraint violation
       throw error;
     }
   }
@@ -52,11 +49,9 @@ export class ItemsService {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        // P2025 is the error code for record not found
         if (error.code === 'P2025') {
           throw new NotFoundException(`Item with ID ${id} not found`);
         }
-        // P2002 is the error code for unique constraint violation
         if (error.code === 'P2002' && updateItemDto.sku) {
           throw new ConflictException(`Item with SKU '${updateItemDto.sku}' already exists`);
         }
@@ -81,19 +76,16 @@ export class ItemsService {
   async getStockInfo(id: number) {
     const item = await this.findOne(id);
     
-    // Get all batches for this item
     const batches = await this.prisma.stockBatch.findMany({
       where: { itemId: id },
       orderBy: { purchaseDate: 'asc' },
     });
     
-    // Calculate total current stock
     const totalStock = batches.reduce(
       (sum, batch) => sum + batch.currentQuantity, 
       0
     );
     
-    // Calculate average purchase price (weighted by current quantity)
     let weightedTotal = 0;
     for (const batch of batches) {
       weightedTotal += batch.currentQuantity * Number(batch.purchasePrice);

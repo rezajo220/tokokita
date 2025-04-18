@@ -17,7 +17,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.$disconnect();
   }
 
-  // Helper method for transaction handling
   async executeWithTransaction<T>(callback: (prisma: PrismaClient) => Promise<T>): Promise<T> {
     return this.$transaction(async (prisma) => {
       return callback(prisma as PrismaClient);
