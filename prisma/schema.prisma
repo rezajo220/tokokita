@@ -1,0 +1,113 @@
+// This is your Prisma schema file for TokoKita retail system
+// Learn more about Prisma schemas: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Model for product items
+model Item {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?
+  sku         String        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  // Relations
+  stockBatches StockBatch[]
+  salesItems   SaleItem[]
+
+  @@map("items")
+}
+
+// Model for stock purchases in batches
+model StockBatch {
+  id               Int       @id @default(autoincrement())
+  itemId           Int
+  purchaseDate     DateTime  @default(now())
+  quantity         Int       // Initial quantity purchased
+  currentQuantity  Int       // Remaining quantity after sales
+  purchasePrice    Decimal   @db.Decimal(10, 2)  // Price per unit
+  batchNumber      String?   // Optional batch/lot number
+  expiryDate       DateTime? // Optional expiry date for perishable items
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  // Relations
+  item             Item      @relation(fields: [itemId], references: [id])
+  salesDetails     SalesDetail[]
+
+  @@map("stock_batches")
+}
+
+// Model for sales transactions
+model Sale {
+  id          Int       @id @default(autoincrement())
+  saleDate    DateTime  @default(now())
+  totalAmount Decimal   @db.Decimal(10, 2)
+  customerId  Int?      // Optional customer reference
+  reference   String?   // Sales reference number
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  saleItems   SaleItem[]
+
+  @@map("sales")
+}
+
+// Model for items in a sale (what was sold)
+model SaleItem {
+  id          Int       @id @default(autoincrement())
+  saleId      Int
+  itemId      Int
+  quantity    Int
+  sellingPrice Decimal  @db.Decimal(10, 2)  // Price per unit sold
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  sale        Sale      @relation(fields: [saleId], references: [id])
+  item        Item      @relation(fields: [itemId], references: [id])
+  salesDetails SalesDetail[]
+
+  @@map("sale_items")
+}
+
+// Model that tracks which specific stock batches were used for each sale item (FIFO tracking)
+model SalesDetail {
+  id            Int       @id @default(autoincrement())
+  saleItemId    Int
+  stockBatchId  Int
+  quantity      Int       // Quantity taken from this specific batch
+  costPrice     Decimal   @db.Decimal(10, 2)  // Original purchase price (for historical record)
+  createdAt     DateTime  @default(now())
+  
+  // Relations
+  saleItem      SaleItem   @relation(fields: [saleItemId], references: [id])
+  stockBatch    StockBatch @relation(fields: [stockBatchId], references: [id])
+
+  @@map("sales_details")
+}
+
+// Model for monthly profit reports (can be generated or cached)
+model ProfitReport {
+  id            Int       @id @default(autoincrement())
+  year          Int
+  month         Int
+  totalSales    Decimal   @db.Decimal(12, 2)
+  totalCogs     Decimal   @db.Decimal(12, 2)
+  grossProfit   Decimal   @db.Decimal(12, 2)
+  itemCount     Int       // Number of items sold
+  generatedAt   DateTime  @default(now())
+  
+  @@unique([year, month])
+  @@map("profit_reports")
+}
