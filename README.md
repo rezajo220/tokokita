@@ -44,7 +44,7 @@ Sistem menggunakan PostgreSQL dengan tabel-tabel utama berikut:
 ### Prasyarat
 
 - Node.js (v16+)
-- PostgreSQL (v12+)
+- PostgreSQL (v16)
 - npm atau yarn
 
 ### Instalasi
